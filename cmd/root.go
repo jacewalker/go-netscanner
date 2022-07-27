@@ -23,18 +23,21 @@ var rootCmd = &cobra.Command{
 	Long:  `A Gopher'd network scanner to return alive hosts within a given subnet.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		argSubnet := cmd.Flag("subnet").Value.String()
+		startTime := time.Now()
+		subnet := cmd.Flag("subnet").Value.String()
 
-		subnetAddresses := parseSubnet(argSubnet)
+		subnetAddresses := parseSubnet(subnet)
 
 		var wg sync.WaitGroup
 		for _, address := range subnetAddresses {
 			wg.Add(1)
-			go pingIP(address)
-
-			defer wg.Done()
+			go pingIP(address, &wg)
 		}
 		wg.Wait()
+
+		duration := time.Since(startTime).Truncate(1000000)
+		fmt.Println("Duration:", duration)
+
 	},
 }
 
@@ -65,7 +68,8 @@ func parseSubnet(subnet string) []net.IP {
 	return address
 }
 
-func pingIP(ip net.IP) {
+func pingIP(ip net.IP, wg *sync.WaitGroup) {
+
 	p := fastping.NewPinger()
 	ra, err := net.ResolveIPAddr("ip4:icmp", ip.String())
 	if err != nil {
@@ -81,6 +85,7 @@ func pingIP(ip net.IP) {
 	if err != nil {
 		log.Fatalln("Error:", err)
 	}
+	defer wg.Done()
 }
 
 func Execute() {
