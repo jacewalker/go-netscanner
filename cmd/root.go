@@ -29,7 +29,6 @@ var rootCmd = &cobra.Command{
 
 		var wg sync.WaitGroup
 		for _, address := range subnetAddresses {
-			// log.Println("Index:", index)
 			wg.Add(1)
 			go pingIP(address)
 
@@ -68,7 +67,6 @@ func parseSubnet(subnet string) []net.IP {
 
 func pingIP(ip net.IP) {
 	p := fastping.NewPinger()
-	// log.Println("Resolving IP Address", ip.String())
 	ra, err := net.ResolveIPAddr("ip4:icmp", ip.String())
 	if err != nil {
 		log.Fatalln("Error:", err)
@@ -76,7 +74,6 @@ func pingIP(ip net.IP) {
 	}
 
 	p.AddIPAddr(ra)
-	// log.Println("Pinging", ra.String())
 	p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
 		fmt.Printf("%s ALIVE, %v\n", addr.String(), rtt)
 	}
@@ -94,6 +91,5 @@ func Execute() {
 }
 
 func init() {
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-netscanner.yaml)")
 	rootCmd.Flags().StringP("subnet", "s", "", "Subnet in CIDR format (eg 192.168.0.0/24)")
 }
