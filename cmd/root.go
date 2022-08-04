@@ -30,8 +30,11 @@ var rootCmd = &cobra.Command{
 		var wg sync.WaitGroup
 		for _, address := range subnetAddresses {
 			wg.Add(1)
+
+			if portsString != "0" {
+				go ports.ScanPorts(address, portsString)
+			}
 			go ping.PingIP(address, &wg)
-			go ports.ScanPorts(address, portsString)
 		}
 		wg.Wait()
 
