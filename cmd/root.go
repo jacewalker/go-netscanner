@@ -14,6 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	subnet          string
+	portsString     string
+	commonPortCheck bool
+	commonPorts     = []int{80, 443, 22}
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "go-netscanner",
@@ -22,9 +29,6 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		startTime := time.Now()
-		subnet := cmd.Flag("subnet").Value.String()
-		portsString := cmd.Flag("ports").Value.String()
-
 		subnetAddresses := ping.ParseSubnet(subnet)
 
 		var wg sync.WaitGroup
@@ -34,13 +38,13 @@ var rootCmd = &cobra.Command{
 			if portsString != "0" {
 				go ports.ScanPorts(address, portsString)
 			}
+
 			go ping.PingIP(address, &wg)
 		}
 		wg.Wait()
 
 		duration := time.Since(startTime).Truncate(1000000)
 		fmt.Println("Duration:", duration)
-
 	},
 }
 
@@ -52,6 +56,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringP("subnet", "s", "", "Subnet in CIDR format (eg 192.168.0.0/24)")
-	rootCmd.Flags().StringP("ports", "p", "0", "Specify a single port or range (0-1000) of ports to scan")
+	rootCmd.Flags().StringVarP(&subnet, "subnet", "s", subnet, "Subnet in CIDR format (eg 192.168.0.0/24)")
+	rootCmd.Flags().StringVarP(&portsString, "ports", "p", portsString, "Specify a single port or range (0-1000) of ports to scan")
+	rootCmd.Flags().BoolVarP(&commonPortCheck, "commonports", "c", commonPortCheck, "Call -c to scan common ports (eg 80, 443, 22)")
 }
