@@ -11,23 +11,22 @@ import (
 	"strings"
 )
 
-func ScanPorts(ipAddress net.IP, portsString string) {
+func ScanPorts(ipAddress net.IP, portsToScan []int) {
 
-	var openPortsSlice = []int{}
-	portsToScan := convertPortsStringToSlice(portsString)
+	var openPortsSlice = []int{0}
 
 	for _, port := range portsToScan {
 		conn, err := net.Dial("tcp", ipAddress.String()+":"+strconv.Itoa(port))
 		if err == nil {
 			conn.Close()
 			openPortsSlice = append(openPortsSlice, port)
-			fmt.Println(ipAddress.String(), "- Port", port, "is open")
+			fmt.Println(ipAddress.String() + ":" + strconv.Itoa(port))
 		}
 	}
 
 }
 
-func convertPortsStringToSlice(portsToScanString string) []int {
+func ConvertPortsStringToSlice(portsToScanString string) []int {
 
 	portRange := []int{}
 

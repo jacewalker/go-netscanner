@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -15,11 +16,22 @@ import (
 )
 
 var (
-	subnet          string
-	portsString     string
-	commonPortCheck bool
-	commonPorts     = []int{80, 443, 22}
+	subnetFlag     string
+	portsFlag      string
+	commonPortFlag bool
+	commonPorts    = []int{80, 443, 22}
 )
+
+type Target struct {
+	Hosts []net.IP
+	Ports []int
+
+	// ActiveHosts []net.IP
+	ActivePorts []int
+
+	ActiveHosts         []string
+	ActiveHostsAndPorts map[string][]int
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -29,19 +41,33 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		startTime := time.Now()
-		subnetAddresses := ping.ParseSubnet(subnet)
+
+		target := Target{}
+		target.Hosts = ping.ParseSubnet(subnetFlag)
+		if portsFlag != "" {
+			target.Ports = ports.ConvertPortsStringToSlice(portsFlag)
+		}
 
 		var wg sync.WaitGroup
-		for _, address := range subnetAddresses {
+
+		fmt.Println("\n################\nOpen Ports:")
+		for _, address := range target.Hosts {
 			wg.Add(1)
 
-			if portsString != "0" {
-				go ports.ScanPorts(address, portsString)
+			if portsFlag != "0" {
+				go ports.ScanPorts(address, target.Ports)
+			} else if commonPortFlag {
+				go ports.ScanPorts(address, commonPorts)
 			}
 
-			go ping.PingIP(address, &wg)
+			go ping.PingIP(address, &wg, &target.ActiveHosts)
 		}
 		wg.Wait()
+
+		fmt.Println("\n################\nActive Hosts:")
+		for _, host := range target.ActiveHosts {
+			fmt.Println(host)
+		}
 
 		duration := time.Since(startTime).Truncate(1000000)
 		fmt.Println("Duration:", duration)
@@ -56,7 +82,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&subnet, "subnet", "s", subnet, "Subnet in CIDR format (eg 192.168.0.0/24)")
-	rootCmd.Flags().StringVarP(&portsString, "ports", "p", portsString, "Specify a single port or range (0-1000) of ports to scan")
-	rootCmd.Flags().BoolVarP(&commonPortCheck, "commonports", "c", commonPortCheck, "Call -c to scan common ports (eg 80, 443, 22)")
+	rootCmd.Flags().StringVarP(&subnetFlag, "subnet", "s", subnetFlag, "Subnet in CIDR format (eg 192.168.0.0/24)")
+	rootCmd.Flags().StringVarP(&portsFlag, "ports", "p", portsFlag, "Specify a single port or range (0-1000) of ports to scan")
+	rootCmd.Flags().BoolVarP(&commonPortFlag, "commonports", "c", commonPortFlag, "Call -c to scan common ports (eg 80, 443, 22)")
 }

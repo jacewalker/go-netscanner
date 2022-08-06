@@ -5,7 +5,6 @@ package ping
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -37,7 +36,7 @@ func ParseSubnet(subnet string) []net.IP {
 	return address
 }
 
-func PingIP(ip net.IP, wg *sync.WaitGroup) {
+func PingIP(ip net.IP, wg *sync.WaitGroup, activeHosts *[]string) {
 
 	p := fastping.NewPinger()
 	ra, err := net.ResolveIPAddr("ip4:icmp", ip.String())
@@ -48,7 +47,8 @@ func PingIP(ip net.IP, wg *sync.WaitGroup) {
 
 	p.AddIPAddr(ra)
 	p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
-		fmt.Printf("%s ALIVE, %v\n", addr.String(), rtt)
+		// fmt.Printf("%s ALIVE, %v\n", addr.String(), rtt)
+		*activeHosts = append(*activeHosts, addr.String())
 	}
 	err = p.Run()
 	if err != nil {
