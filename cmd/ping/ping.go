@@ -17,7 +17,7 @@ import (
 func ParseSubnet(subnet string) []net.IP {
 	_, ipv4Net, err := net.ParseCIDR(subnet)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error:", err)
 	}
 
 	mask := binary.BigEndian.Uint32(ipv4Net.Mask)
@@ -37,7 +37,6 @@ func ParseSubnet(subnet string) []net.IP {
 }
 
 func PingIP(ip net.IP, wg *sync.WaitGroup, activeHosts *[]string) {
-
 	p := fastping.NewPinger()
 	ra, err := net.ResolveIPAddr("ip4:icmp", ip.String())
 	if err != nil {

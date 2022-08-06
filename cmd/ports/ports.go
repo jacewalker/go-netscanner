@@ -23,7 +23,6 @@ func ScanPorts(ipAddress net.IP, portsToScan []int) {
 			fmt.Println(ipAddress.String() + ":" + strconv.Itoa(port))
 		}
 	}
-
 }
 
 func ConvertPortsStringToSlice(portsToScanString string) []int {
